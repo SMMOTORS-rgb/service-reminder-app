@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sivamalai Motors | Service Reminder</title>
+    <title>Service Reminder Sivamalai Motors</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -385,6 +385,69 @@
                 width: 100%;
                 padding: 0 10px;
             }
+
+            table {
+                min-width: 0 !important;
+            }
+        }
+
+        #loginOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-gradient);
+            z-index: 5000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .login-box {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            padding: 2rem;
+            border-radius: var(--card-radius);
+            border: 1px solid var(--glass-border);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .pin-input {
+            font-size: 2rem;
+            letter-spacing: 0.5rem;
+            text-align: center;
+            width: 100%;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: white;
+            outline: none;
+        }
+
+        .pin-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .clickable-card {
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .clickable-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .clickable-card.active-filter {
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
         }
 
         /* Loading Overlay */
@@ -422,6 +485,20 @@
 </head>
 
 <body>
+    <div id="loginOverlay">
+        <div class="login-box">
+            <div class="logo" style="justify-content: center; margin-bottom: 2rem;">
+                <i data-lucide="shield-check" style="width: 32px; height: 32px;"></i>
+                Sivamalai Motors
+            </div>
+            <h3 style="color: var(--text-muted); margin-bottom: 1rem;">Enter Access PIN</h3>
+            <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="••••" autofocus>
+            <button class="btn btn-primary" onclick="checkLogin()" style="width: 100%; justify-content: center;">
+                Unlock System
+            </button>
+            <p id="loginError" style="color: #f87171; margin-top: 1rem; display: none;">Incorrect PIN</p>
+        </div>
+    </div>
     <header>
         <div class="logo">
             <i data-lucide="wrench"></i>
@@ -443,14 +520,14 @@
     <main class="main-container">
         <!-- Stats -->
         <div class="stats-grid">
-            <div class="stat-card glass-card">
+            <div class="stat-card glass-card clickable-card" onclick="applyFilter('all')" id="cardTotal">
                 <div class="stat-icon"><i data-lucide="users"></i></div>
                 <div class="stat-info">
                     <h3>Total Customers</h3>
                     <div class="value" id="statTotal">0</div>
                 </div>
             </div>
-            <div class="stat-card glass-card">
+            <div class="stat-card glass-card clickable-card" onclick="applyFilter('upcoming')" id="cardUpcoming">
                 <div class="stat-icon" style="color: #fbbf24; background: rgba(245, 158, 11, 0.15);"><i
                         data-lucide="bell"></i></div>
                 <div class="stat-info">
@@ -458,7 +535,7 @@
                     <div class="value" id="statUpcoming">0</div>
                 </div>
             </div>
-            <div class="stat-card glass-card">
+            <div class="stat-card glass-card clickable-card" onclick="applyFilter('overdue')" id="cardOverdue">
                 <div class="stat-icon" style="color: #f87171; background: rgba(239, 68, 68, 0.15);"><i
                         data-lucide="alert-triangle"></i></div>
                 <div class="stat-info">
@@ -582,6 +659,35 @@
 
         // Initialize Icons
         lucide.createIcons();
+
+        // Login System
+        const PIN = "8020";
+        const loginOverlay = document.getElementById('loginOverlay');
+        const pinInput = document.getElementById('pinInput');
+
+        function checkLogin() {
+            if (pinInput.value === PIN) {
+                loginOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    loginOverlay.style.display = 'none';
+                }, 300);
+                sessionStorage.setItem('isLoggedIn', 'true');
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+                pinInput.value = '';
+                pinInput.focus();
+            }
+        }
+
+        pinInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') checkLogin();
+            document.getElementById('loginError').style.display = 'none';
+        });
+
+        // Check Session
+        if (sessionStorage.getItem('isLoggedIn') === 'true') {
+            loginOverlay.style.display = 'none';
+        }
 
         // Elements
         const modal = document.getElementById('entryModal');
@@ -802,18 +908,42 @@
             saveReminders("Saved");
         }
 
+        let currentFilter = 'all';
+
+        function applyFilter(type) {
+            currentFilter = type;
+            document.querySelectorAll('.clickable-card').forEach(c => c.classList.remove('active-filter'));
+
+            if (type === 'upcoming') document.getElementById('cardUpcoming').classList.add('active-filter');
+            else if (type === 'overdue') document.getElementById('cardOverdue').classList.add('active-filter');
+            else document.getElementById('cardTotal').classList.add('active-filter');
+
+            renderTable(searchInput.value);
+        }
+
         function updateStats() {
             document.getElementById('statTotal').innerText = reminders.length;
-            const now = new Date();
-            const thirtyDays = new Date();
-            thirtyDays.setDate(now.getDate() + 30);
+
+            // Normalize dates to midnight for accurate comparison
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const thirtyDays = new Date(today);
+            thirtyDays.setDate(today.getDate() + 30);
 
             const upcoming = reminders.filter(r => {
+                if (!r.reminderDate) return false;
                 const d = new Date(r.reminderDate);
-                return d > now && d <= thirtyDays;
+                d.setHours(0, 0, 0, 0);
+                return d > today && d <= thirtyDays;
             }).length;
 
-            const overdue = reminders.filter(r => new Date(r.reminderDate) < now).length;
+            const overdue = reminders.filter(r => {
+                if (!r.reminderDate) return false;
+                const d = new Date(r.reminderDate);
+                d.setHours(0, 0, 0, 0);
+                return d < today;
+            }).length;
 
             document.getElementById('statUpcoming').innerText = upcoming;
             document.getElementById('statOverdue').innerText = overdue;
@@ -821,15 +951,35 @@
 
         let selectedId = null;
 
-        function renderTable(filter = '') {
+        function renderTable(filterText = '') {
             tableBody.innerHTML = '';
-            const filtered = reminders.filter(r =>
-                (r.name || '').toLowerCase().includes(filter.toLowerCase()) ||
-                (r.mobile || '').includes(filter) ||
-                (r.number || '').toLowerCase().includes(filter.toLowerCase())
+
+            // 1. Text Search Filter
+            let textFiltered = reminders.filter(r =>
+                (r.name || '').toLowerCase().includes(filterText.toLowerCase()) ||
+                (r.mobile || '').includes(filterText) ||
+                (r.number || '').toLowerCase().includes(filterText.toLowerCase())
             );
 
-            filtered.forEach(r => {
+            // 2. Category Filter
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const thirtyDays = new Date(today);
+            thirtyDays.setDate(today.getDate() + 30);
+
+            let finalFiltered = textFiltered.filter(r => {
+                if (currentFilter === 'all') return true;
+                if (!r.reminderDate) return false;
+
+                const d = new Date(r.reminderDate);
+                d.setHours(0, 0, 0, 0);
+
+                if (currentFilter === 'upcoming') return d > today && d <= thirtyDays;
+                if (currentFilter === 'overdue') return d < today;
+                return true;
+            });
+
+            finalFiltered.forEach(r => {
                 const tr = document.createElement('tr');
                 tr.setAttribute('data-id', r.id);
                 if (selectedId === r.id) tr.classList.add('selected');
@@ -850,7 +1000,7 @@
                     <td data-label="Model">${r.model}</td>
                     <td data-label="Vehicle No"><span style="background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px;">${r.number}</span></td>
                     <td data-label="Service Date">${r.serviceDate || 'N/A'}</td>
-                    <td data-label="Next Due" style="color: ${isOverdue ? '#f87171' : 'inherit'}">${r.reminderDate}</td>
+                    <td data-label="Next Due" style="color: ${isOverdue ? '#f87171' : (currentFilter === 'upcoming' ? '#fbbf24' : 'inherit')}">${r.reminderDate}</td>
                     <td data-label="Next KM" style="font-weight: 600;">${r.reminderKM} KM</td>
                     <td data-label="Details" title="${r.details || ''}">${shortDetails}</td>
                     <td data-label="Actions" style="text-align: right; white-space: nowrap;">
