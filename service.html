@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sivamalai Motors | Service CRM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg: #0f172a;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --radius: 20px;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            background-image: radial-gradient(at 0% 0%, #1e1b4b 0, transparent 50%), radial-gradient(at 100% 0%, #312e81 0, transparent 50%);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            padding: 1.5rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 2rem;
+        }
+
+        .logo a {
+            text-decoration: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 1.4rem;
+        }
+
+        /* Stats Grid */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--primary);
+        }
+
+        .stat-card.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+        }
+
+        .stat-icon {
+            width: 54px;
+            height: 54px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--primary);
+        }
+
+        .stat-val {
+            font-size: 1.8rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        /* Actions Bar */
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .search {
+            position: relative;
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .search input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            color: white;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .search input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .search i {
+            position: absolute;
+            left: 1.2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-outline {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: white;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Table */
+        .card-list {
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 1.2rem;
+            background: rgba(255, 255, 255, 0.02);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 1.2rem;
+            border-bottom: 1px solid var(--glass-border);
+            font-size: 0.95rem;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            width: 100%;
+            max-width: 700px;
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--glass-border);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+        }
+
+        .field {
+            margin-bottom: 1rem;
+        }
+
+        .field.full {
+            grid-column: span 2;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .field input,
+        .field textarea,
+        .field select {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: white;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .field input:focus {
+            border-color: var(--primary);
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 3000;
+            border: 1px solid var(--glass-border);
+        }
+
+        /* Loading */
+        #loadingOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 5000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--glass-border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 800px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .search {
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            th {
+                display: none;
+            }
+
+            tr {
+                display: block;
+                background: rgba(255, 255, 255, 0.03);
+                margin-bottom: 1rem;
+                border-radius: 16px;
+                padding: 1rem;
+                border: 1px solid var(--glass-border);
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid var(--glass-border);
+                padding: 0.8rem 0;
+                text-align: right;
+            }
+
+            td:last-child {
+                border: none;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                color: var(--text-muted);
+                font-size: 0.8rem;
+                text-transform: uppercase;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .field.full {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <script>
+        if (sessionStorage.getItem('isLoggedIn') !== 'true' && localStorage.getItem('sm_logged_in') !== 'true') {
+            window.location.href = 'index.html';
+        }
+    </script>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <a href="index.html"><i data-lucide="arrow-left-circle" stroke-width="2.5"></i> Service Reminder</a>
+            </div>
+            <div style="display: flex; gap: 0.8rem; align-items: center;">
+                <button class="btn btn-outline" onclick="generateTestData()"><i data-lucide="beaker"></i> Data</button>
+                <button class="btn btn-outline" onclick="document.getElementById('importInput').click()"><i
+                        data-lucide="upload"></i> Import</button>
+                <button class="btn btn-outline" id="exportBtn"><i data-lucide="download"></i> Export</button>
+                <input type="file" id="importInput" accept=".xlsx, .xls, .csv" style="display: none;">
+                <button class="btn btn-outline" style="border-color: var(--danger); color: var(--danger);"
+                    onclick="logout()"><i data-lucide="log-out"></i></button>
+            </div>
+        </header>
+
+        <section class="stats">
+            <div class="stat-card" id="cardTotal" onclick="applyFilter('all')">
+                <div class="stat-icon"><i data-lucide="users"></i></div>
+                <div>
+                    <div class="stat-val" id="statTotal">0</div>
+                    <div class="stat-label">Total Customers</div>
+                </div>
+            </div>
+            <div class="stat-card" id="cardUpcoming" onclick="applyFilter('upcoming')">
+                <div class="stat-icon" style="color:var(--accent)"><i data-lucide="bell"></i></div>
+                <div>
+                    <div class="stat-val" id="statUpcoming">0</div>
+                    <div class="stat-label">Upcoming (5 Days)</div>
+                </div>
+            </div>
+            <div class="stat-card" id="cardOverdue" onclick="applyFilter('overdue')">
+                <div class="stat-icon" style="color:var(--danger)"><i data-lucide="alert-triangle"></i></div>
+                <div>
+                    <div class="stat-val" id="statOverdue">0</div>
+                    <div class="stat-label">Overdue Services</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="actions">
+            <div class="search">
+                <i data-lucide="search"></i>
+                <input type="text" id="searchInput" placeholder="Search customer, mobile, or vehicle number...">
+            </div>
+            <div style="display: flex; gap: 1rem; width: 100%; max-width: 400px;">
+                <button class="btn btn-primary" style="flex: 2" onclick="openModal()"><i data-lucide="plus"></i> Add
+                    Entry</button>
+                <button class="btn btn-outline" style="flex: 1; border-color: var(--accent); color: var(--accent);"
+                    onclick="generateTestData()"><i data-lucide="database"></i> Data</button>
+            </div>
+        </section>
+
+        <section class="card-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Mobile</th>
+                        <th>Vehicle Details</th>
+                        <th>Next Due</th>
+                        <th>Next KM</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+            <div id="paginationControls"
+                style="padding: 1.5rem; text-align: center; border-top: 1px solid var(--glass-border); display: none;">
+                <button class="btn btn-outline" style="margin: 0 auto; width: auto;" onclick="showAllRecords()">View
+                    More Records <i data-lucide="chevron-down"></i></button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="entryModal">
+        <div class="modal-content">
+            <h2 id="modalTitle" style="margin-bottom: 2rem; font-weight: 800;">Add Record</h2>
+            <form id="serviceForm">
+                <input type="hidden" id="editId">
+                <div class="form-grid">
+                    <div class="field full"><label>Customer Name</label><input type="text" id="custName" required></div>
+                    <div class="field"><label>Mobile Number</label><input type="tel" id="custMobile" required></div>
+                    <div class="field"><label>Vehicle Model</label><input type="text" id="vehModel" required></div>
+                    <div class="field"><label>Vehicle Number</label><input type="text" id="vehNumber" required
+                            placeholder="TN 01 AB 1234"></div>
+                    <div class="field"><label>Current KM</label><input type="number" id="currentKM" required></div>
+                    <div class="field"><label>Service Date</label><input type="date" id="serviceDate" required></div>
+                    <div class="field"><label>Next Due Date (+3 mo)</label><input type="date" id="reminderDate"
+                            readonly></div>
+                    <div class="field"><label>Next Service KM (+3k)</label><input type="number" id="reminderKM"
+                            readonly></div>
+                    <div class="field full"><label>Service Remarks</label><textarea id="serviceDetails"
+                            rows="3"></textarea></div>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;" id="saveBtn">Save Record</button>
+                    <button type="button" class="btn btn-outline" id="modalDeleteBtn"
+                        style="color: var(--danger); display: none;" onclick="handleModalDelete()">Delete</button>
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <p>Syncing...</p>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbxuD0LHE2R958siOSv2xh2d6f_X3F4cV7C5pSQi9M8_eMb8Pyc3vb1_4xiOfbXMxRvnAw/exec";
+        let reminders = [];
+        let currentFilter = 'all';
+        let showFullTable = false;
+        const UPCOMING_WINDOW_DAYS = 5;
+
+        lucide.createIcons();
+
+        function logout() { sessionStorage.removeItem('isLoggedIn'); window.location.href = 'index.html'; }
+
+        // Auto-calc logic
+        const kmInput = document.getElementById('currentKM');
+        const sDateInput = document.getElementById('serviceDate');
+        const rDateInput = document.getElementById('reminderDate');
+        const rKMInput = document.getElementById('reminderKM');
+
+        kmInput.oninput = () => rKMInput.value = parseInt(kmInput.value) + 3000 || '';
+        sDateInput.onchange = () => {
+            if (!sDateInput.value) return;
+            const d = new Date(sDateInput.value);
+            d.setMonth(d.getMonth() + 3);
+            rDateInput.value = d.toISOString().split('T')[0];
+        };
+
+        async function fetchReminders() {
+            setLoading(true);
+            try {
+                const res = await fetch(API_URL + "?action=read");
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                    reminders = data.map(r => ({ ...r, createdAt: r.createdAt || new Date().toISOString() }));
+                    renderTable();
+                    updateStats();
+                }
+            } catch (e) { showToast("Fetch error: " + e.message); }
+            finally { setLoading(false); }
+        }
+
+        async function saveReminders(actionName) {
+            setLoading(true);
+            try {
+                await fetch(API_URL + "?action=sync", { method: 'POST', body: JSON.stringify(reminders) });
+                renderTable();
+                updateStats();
+                showToast("Data " + actionName);
+            } catch (e) { showToast("Save failed: " + e.message); }
+            finally { setLoading(false); }
+        }
+
+        function renderTable(searchText = '') {
+            const container = document.getElementById('tableBody');
+            container.innerHTML = '';
+
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const win = new Date(today); win.setDate(today.getDate() + UPCOMING_WINDOW_DAYS);
+
+            const filtered = reminders.filter(r => {
+                const matchText = (r.name + r.mobile + r.number).toLowerCase().includes(searchText.toLowerCase());
+                if (!matchText) return false;
+
+                const d = new Date(r.reminderDate); d.setHours(0, 0, 0, 0);
+                if (currentFilter === 'overdue') return d < today;
+                if (currentFilter === 'upcoming') return d >= today && d <= win;
+                return true;
+            });
+
+            filtered.forEach((r, idx) => {
+                if (!showFullTable && idx >= 10) return;
+
+                const tr = document.createElement('tr');
+                const due = new Date(r.reminderDate); due.setHours(0, 0, 0, 0);
+                const isOverdue = due < today;
+                const isUpcoming = due >= today && due <= win;
+
+                tr.innerHTML = `
+                    <td data-label="Customer" style="font-weight:700">${r.name}</td>
+                    <td data-label="Mobile">${r.mobile}</td>
+                    <td data-label="Vehicle">${r.model} <br> <small style="background:#000; padding:2px 6px; border-radius:4px">${r.number}</small></td>
+                    <td data-label="Due" style="color:${isOverdue ? 'var(--danger)' : (isUpcoming ? 'var(--accent)' : 'inherit')}">${r.reminderDate}</td>
+                    <td data-label="KM">${r.reminderKM} KM</td>
+                    <td data-label="Actions" style="text-align: right;">
+                        <button class="btn-outline" style="padding:5px; border-radius:8px" onclick="editEntry('${r.id}')"><i data-lucide="edit-2" size="16"></i></button>
+                        <button class="btn-outline" style="padding:5px; border-radius:8px; color:var(--danger)" onclick="deleteEntry('${r.id}')"><i data-lucide="trash-2" size="16"></i></button>
+                    </td>
+                `;
+                container.appendChild(tr);
+            });
+
+            const pag = document.getElementById('paginationControls');
+            pag.style.display = (!showFullTable && filtered.length > 10) ? 'block' : 'none';
+            lucide.createIcons();
+        }
+
+        function showAllRecords() {
+            showFullTable = true;
+            renderTable(document.getElementById('searchInput').value);
+        }
+
+        function updateStats() {
+            document.getElementById('statTotal').innerText = reminders.length;
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const win = new Date(today); win.setDate(today.getDate() + UPCOMING_WINDOW_DAYS);
+
+            const overdue = reminders.filter(r => new Date(r.reminderDate) < today).length;
+            const upcoming = reminders.filter(r => {
+                const d = new Date(r.reminderDate);
+                return d >= today && d <= win;
+            }).length;
+
+            document.getElementById('statUpcoming').innerText = upcoming;
+            document.getElementById('statOverdue').innerText = overdue;
+
+            if (upcoming > 0 && !sessionStorage.getItem('notified_u')) {
+                showToast(`🔔 ${upcoming} services due in ${UPCOMING_WINDOW_DAYS} days!`);
+                sessionStorage.setItem('notified_u', 'true');
+            }
+        }
+
+        function openModal() {
+            document.getElementById('serviceForm').reset();
+            document.getElementById('editId').value = '';
+            document.getElementById('modalTitle').innerText = "Add Record";
+            document.getElementById('modalDeleteBtn').style.display = 'none';
+            document.getElementById('entryModal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('entryModal').style.display = 'none'; }
+
+        function editEntry(id) {
+            const r = reminders.find(x => x.id === id);
+            if (!r) return;
+            document.getElementById('editId').value = r.id;
+            document.getElementById('custName').value = r.name;
+            document.getElementById('custMobile').value = r.mobile;
+            document.getElementById('vehModel').value = r.model;
+            document.getElementById('vehNumber').value = r.number;
+            document.getElementById('currentKM').value = r.km;
+            document.getElementById('serviceDate').value = r.serviceDate;
+            document.getElementById('reminderDate').value = r.reminderDate;
+            document.getElementById('reminderKM').value = r.reminderKM;
+            document.getElementById('serviceDetails').value = r.details || '';
+            document.getElementById('modalTitle').innerText = "Edit Record";
+            document.getElementById('modalDeleteBtn').style.display = 'block';
+            document.getElementById('entryModal').style.display = 'flex';
+        }
+
+        document.getElementById('serviceForm').onsubmit = (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            const entry = {
+                name: document.getElementById('custName').value,
+                mobile: document.getElementById('custMobile').value,
+                model: document.getElementById('vehModel').value,
+                number: document.getElementById('vehNumber').value,
+                km: document.getElementById('currentKM').value,
+                serviceDate: document.getElementById('serviceDate').value,
+                reminderDate: document.getElementById('reminderDate').value,
+                reminderKM: document.getElementById('reminderKM').value,
+                details: document.getElementById('serviceDetails').value,
+                updatedAt: new Date().toISOString()
+            };
+
+            if (id) {
+                const idx = reminders.findIndex(x => x.id === id);
+                reminders[idx] = { ...reminders[idx], ...entry };
+            } else {
+                entry.id = 'R' + Date.now();
+                entry.createdAt = new Date().toISOString();
+                reminders.unshift(entry);
+            }
+            saveReminders(id ? "Updated" : "Created");
+            closeModal();
+        };
+
+        function deleteEntry(id) {
+            if (confirm("Permanently delete this record?")) {
+                reminders = reminders.filter(x => x.id !== id);
+                saveReminders("Deleted");
+            }
+        }
+
+        function handleModalDelete() { deleteEntry(document.getElementById('editId').value); closeModal(); }
+
+        function applyFilter(f) {
+            currentFilter = f;
+            document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+            if (f === 'upcoming') document.getElementById('cardUpcoming').classList.add('active');
+            else if (f === 'overdue') document.getElementById('cardOverdue').classList.add('active');
+            else document.getElementById('cardTotal').classList.add('active');
+            renderTable(document.getElementById('searchInput').value);
+        }
+
+        document.getElementById('searchInput').oninput = (e) => renderTable(e.target.value);
+
+        function showToast(m) {
+            const t = document.getElementById('toast'); t.innerText = m;
+            t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000);
+        }
+
+        function setLoading(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+
+        function generateTestData() {
+            const today = new Date();
+            const past = new Date(); past.setDate(today.getDate() - 3);
+            const soon = new Date(); soon.setDate(today.getDate() + 2);
+
+            const tests = [
+                { id: 'T1', name: 'Test Overdue', mobile: '90001', model: 'Hero', number: 'TEST 1', km: 1000, serviceDate: '2023-01-01', reminderDate: past.toISOString().split('T')[0], reminderKM: 4000 },
+                { id: 'T2', name: 'Test Upcoming', mobile: '90002', model: 'Honda', number: 'TEST 2', km: 2000, serviceDate: '2023-01-01', reminderDate: soon.toISOString().split('T')[0], reminderKM: 5000 }
+            ];
+            reminders.push(...tests);
+            saveReminders("Added Tests");
+        }
+
+        document.getElementById('exportBtn').onclick = () => {
+            const ws = XLSX.utils.json_to_sheet(reminders);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Service_Data");
+            XLSX.writeFile(wb, "Sivamalai_Service_Export.xlsx");
+        };
+
+        fetchReminders();
+    </script>
+</body>
+
+</html>

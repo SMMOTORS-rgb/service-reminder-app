@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sivamalai Motors | Attendance & Salary</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg: #0f172a;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --radius: 20px;
+            --present: #10b981;
+            --absent: #ef4444;
+            --perm: #fbbf24;
+            --hday: #60a5fa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            background-image: radial-gradient(at 100% 0%, #1e1b4b 0, transparent 50%), radial-gradient(at 0% 100%, #312e81 0, transparent 50%);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            padding: 1.5rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 2rem;
+        }
+
+        .logo a {
+            text-decoration: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 1.4rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn-outline {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: white;
+        }
+
+        /* Date Picker */
+        .date-filter {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            width: fit-content;
+        }
+
+        .date-filter label {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .date-filter input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: white;
+            padding: 0.5rem 1rem;
+            outline: none;
+            font-family: inherit;
+            font-weight: 600;
+        }
+
+        /* Staff Grid */
+        .staff-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .staff-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .staff-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .staff-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1.5rem;
+        }
+
+        .staff-name {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--primary-light);
+        }
+
+        .staff-base {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .att-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .att-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px 5px;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+        }
+
+        .att-btn.active[data-t="P"] {
+            background: var(--present);
+            border-color: var(--present);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .att-btn.active[data-t="A"] {
+            background: var(--absent);
+            border-color: var(--absent);
+            color: white;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .att-btn.active[data-t="PM"] {
+            background: var(--perm);
+            border-color: var(--perm);
+            color: white;
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+        }
+
+        .att-btn.active[data-t="H"] {
+            background: var(--hday);
+            border-color: var(--hday);
+            color: white;
+            box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
+        }
+
+        .adv-input {
+            margin-top: 1.5rem;
+            padding-top: 1.2rem;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .adv-input label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .adv-input input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 8px 12px;
+            color: white;
+            outline: none;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        /* Summary */
+        .summary {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 2rem;
+        }
+
+        .summary-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .summary-header h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .sum-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .sum-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 1.2rem 0;
+            border-bottom: 1px solid var(--glass-border);
+            align-items: center;
+        }
+
+        .sum-row:last-child {
+            border: none;
+            padding-top: 2rem;
+        }
+
+        .sum-name {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .sum-stats {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .sum-total {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--present);
+        }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+            .btn {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .date-filter {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .staff-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sum-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .sum-total {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <script>
+        if (sessionStorage.getItem('isLoggedIn') !== 'true' && localStorage.getItem('sm_logged_in') !== 'true') {
+            window.location.href = 'index.html';
+        }
+    </script>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <a href="index.html"><i data-lucide="arrow-left-circle" stroke-width="2.5"></i> Daily Attendance</a>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="generateTestData()"><i data-lucide="beaker"></i> Data</button>
+                <button class="btn btn-outline" onclick="document.getElementById('importFile').click()"><i
+                        data-lucide="upload"></i> Import</button>
+                <input type="file" id="importFile" style="display:none" accept=".xlsx,.xls"
+                    onchange="importAttendance(event)">
+                <button class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;" onclick="logout()"><i
+                        data-lucide="log-out"></i></button>
+                <button class="btn btn-primary" onclick="exportAttendance()"><i data-lucide="download"></i> Make
+                    Sheet</button>
+            </div>
+        </header>
+
+        <section class="date-filter">
+            <label><i data-lucide="calendar" size="18"></i> Select Date:</label>
+            <input type="date" id="attDate" onchange="loadAttendance()">
+        </section>
+
+        <section class="staff-grid" id="staffGrid"></section>
+
+        <div id="paginationControls" style="padding: 1.5rem; text-align: center; margin-bottom: 2rem; display: none;">
+            <button class="btn btn-outline" style="margin: 0 auto; width: auto;" onclick="showAllStaff()">View All Staff
+                <i data-lucide="chevron-down"></i></button>
+        </div>
+
+        <section class="summary">
+            <div class="summary-header">
+                <div style="background:var(--primary); padding:10px; border-radius:12px; color:white"><i
+                        data-lucide="calculator"></i></div>
+                <h2>Monthly Salary Summary <small
+                        style="font-size:0.9rem; font-weight:400; color:var(--text-muted)">(Current Month)</small></h2>
+            </div>
+            <div id="salarySummary"></div>
+        </section>
+    </div>
+
+    <div id="loadingOverlay"
+        style="position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:5000; display:none; flex-direction:column; align-items:center; justify-content:center; gap:1rem;">
+        <div
+            style="width:40px; height:40px; border:4px solid var(--glass-border); border-top-color:var(--primary); border-radius:50%; animation:spin 1s linear infinite;">
+        </div>
+        <p>Syncing Cloud...</p>
+    </div>
+    <style>
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbxuD0LHE2R958siOSv2xh2d6f_X3F4cV7C5pSQi9M8_eMb8Pyc3vb1_4xiOfbXMxRvnAw/exec";
+        lucide.createIcons();
+
+        const STAFF = [
+            { name: "JOTHI", base: 9800 },
+            { name: "BARATH", base: 9800 },
+            { name: "BOOBALAN", base: 10000 },
+            { name: "SANTHANAM", base: 8600 },
+            { name: "DINESH", base: 7500 }
+        ];
+
+        let attendanceStore = {};
+        let showFullStaff = false;
+        const todayInput = document.getElementById('attDate');
+        todayInput.value = new Date().toISOString().split('T')[0];
+
+        function logout() { sessionStorage.removeItem('isLoggedIn'); window.location.href = 'index.html'; }
+
+        async function fetchAttendance() {
+            setLoading(true);
+            try {
+                const res = await fetch(API_URL + "?action=read&module=attendance");
+                const data = await res.json();
+                attendanceStore = data || {};
+                loadAttendance();
+            } catch (e) {
+                attendanceStore = JSON.parse(localStorage.getItem('sm_attendance') || '{}');
+                loadAttendance();
+            }
+            finally { setLoading(false); }
+        }
+
+        async function save() {
+            setLoading(true);
+            localStorage.setItem('sm_attendance', JSON.stringify(attendanceStore));
+            try {
+                await fetch(API_URL + "?action=sync&module=attendance", { method: 'POST', body: JSON.stringify(attendanceStore) });
+                loadAttendance();
+            } catch (e) { console.error("Cloud sync failed"); }
+            finally { setLoading(false); }
+        }
+
+        function setLoading(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+
+        function loadAttendance() {
+            const date = todayInput.value;
+            const grid = document.getElementById('staffGrid');
+            grid.innerHTML = '';
+
+            const dayData = attendanceStore[date] || {};
+
+            STAFF.forEach((s, idx) => {
+                if (!showFullStaff && idx >= 10) return;
+
+                const sData = dayData[s.name] || { type: '', advance: 0 };
+                const card = document.createElement('div');
+                card.className = 'staff-card';
+                card.innerHTML = `
+                    <div class="staff-info">
+                        <div>
+                            <div class="staff-name">${s.name}</div>
+                            <div class="staff-base">Monthly Base: ₹${s.base.toLocaleString()}</div>
+                        </div>
+                        <div style="background:rgba(99,102,241,0.1); color:var(--primary); padding:6px 12px; border-radius:10px; font-weight:800; font-size:0.75rem">STAFF</div>
+                    </div>
+                    <div class="att-buttons">
+                        <div class="att-btn ${sData.type === 'P' ? 'active' : ''}" data-t="P" onclick="mark('${s.name}', 'P')">PRESENT</div>
+                        <div class="att-btn ${sData.type === 'A' ? 'active' : ''}" data-t="A" onclick="mark('${s.name}', 'A')">ABSENT</div>
+                        <div class="att-btn ${sData.type === 'PM' ? 'active' : ''}" data-t="PM" onclick="mark('${s.name}', 'PM')">PERMISSION</div>
+                        <div class="att-btn ${sData.type === 'H' ? 'active' : ''}" data-t="H" onclick="mark('${s.name}', 'H')">HOLIDAY</div>
+                    </div>
+                    <div class="adv-input">
+                        <label>Advance Payment Entry:</label>
+                        <input type="number" value="${sData.advance || 0}" onchange="setAdvance('${s.name}', this.value)" placeholder="₹ 0">
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            const pag = document.getElementById('paginationControls');
+            pag.style.display = (!showFullStaff && STAFF.length > 10) ? 'block' : 'none';
+
+            updateSummary();
+        }
+
+        function showAllStaff() {
+            showFullStaff = true;
+            loadAttendance();
+        }
+
+        function mark(name, type) {
+            const date = todayInput.value;
+            if (!attendanceStore[date]) attendanceStore[date] = {};
+            if (!attendanceStore[date][name]) attendanceStore[date][name] = { type: '', advance: 0 };
+            attendanceStore[date][name].type = (attendanceStore[date][name].type === type) ? '' : type;
+            save();
+        }
+
+        function setAdvance(name, val) {
+            const date = todayInput.value;
+            if (!attendanceStore[date]) attendanceStore[date] = {};
+            if (!attendanceStore[date][name]) attendanceStore[date][name] = { type: '', advance: 0 };
+            attendanceStore[date][name].advance = parseFloat(val) || 0;
+            save();
+        }
+
+        function updateSummary() {
+            const summaryDiv = document.getElementById('salarySummary');
+            summaryDiv.innerHTML = '';
+
+            const currentMonth = todayInput.value.substring(0, 7);
+            const daysInMonth = new Date(todayInput.value.substring(0, 4), todayInput.value.substring(5, 7), 0).getDate();
+
+            STAFF.forEach(s => {
+                let pDays = 0, aDays = 0, adv = 0;
+                Object.keys(attendanceStore).forEach(date => {
+                    if (date.startsWith(currentMonth)) {
+                        const d = attendanceStore[date][s.name];
+                        if (d) {
+                            if (d.type === 'P' || d.type === 'H') pDays++;
+                            if (d.type === 'A') aDays++;
+                            adv += (d.advance || 0);
+                        }
+                    }
+                });
+
+                const perDay = s.base / daysInMonth;
+                const final = Math.max(0, (perDay * pDays) - adv);
+
+                const row = document.createElement('div');
+                row.className = 'sum-row';
+                row.innerHTML = `
+                    <div>
+                        <div class="sum-name">${s.name}</div>
+                        <div class="sum-stats">${pDays} Working Days • ${aDays} Absent • ₹${adv.toLocaleString()} Adv</div>
+                    </div>
+                    <div class="sum-total">₹${Math.round(final).toLocaleString()}</div>
+                `;
+                summaryDiv.appendChild(row);
+            });
+        }
+
+        function exportAttendance() {
+            const currentMonth = todayInput.value.substring(0, 7);
+            const daysInMonth = new Date(todayInput.value.substring(0, 4), todayInput.value.substring(5, 7), 0).getDate();
+            const exportData = STAFF.map(s => {
+                let pDays = 0, aDays = 0, pmDays = 0, hDays = 0, adv = 0;
+                Object.keys(attendanceStore).forEach(date => {
+                    if (date.startsWith(currentMonth)) {
+                        const d = attendanceStore[date][s.name];
+                        if (d) {
+                            if (d.type === 'P') pDays++; if (d.type === 'A') aDays++;
+                            if (d.type === 'PM') pmDays++; if (d.type === 'H') hDays++;
+                            adv += (d.advance || 0);
+                        }
+                    }
+                });
+                const final = Math.max(0, ((s.base / daysInMonth) * (pDays + hDays)) - adv);
+                return { "Name": s.name, "Base": s.base, "Present": pDays, "Absent": aDays, "Late/Perm": pmDays, "Holiday": hDays, "Advance": adv, "Net Salary": Math.round(final) };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+            XLSX.writeFile(wb, `Sivamalai_Attendance_${currentMonth}.xlsx`);
+        }
+
+        function importAttendance(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const bstr = evt.target.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const data = XLSX.utils.sheet_to_json(wb.Sheets[wsname]);
+
+                if (confirm(`Restore attendance data from file? This will merge with current records.`)) {
+                    // Note: Reconstructing daily state from a monthly summary is complex.
+                    // Best practice is to export/import the raw JSON store for full backups.
+                    alert("Import from sheet is for reporting. Use cloud sync for data recovery.");
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        function generateTestData() {
+            const currentMonth = new Date().toISOString().substring(0, 7);
+            const daysInMonth = 30; // Simplified for test
+            const types = ['P', 'P', 'P', 'P', 'A', 'PM', 'H'];
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const date = `${currentMonth}-${String(d).padStart(2, '0')}`;
+                if (!attendanceStore[date]) attendanceStore[date] = {};
+                STAFF.forEach(s => {
+                    attendanceStore[date][s.name] = {
+                        type: types[Math.floor(Math.random() * types.length)],
+                        advance: Math.random() > 0.8 ? 500 : 0
+                    };
+                });
+            }
+            save();
+            alert("Generated 30 days of random test data for all staff!");
+        }
+
+        fetchAttendance();
+    </script>
+</body>
+
+</html>
